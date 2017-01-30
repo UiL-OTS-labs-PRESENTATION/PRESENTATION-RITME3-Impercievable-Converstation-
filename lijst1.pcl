@@ -1,0 +1,302 @@
+ 	term.print_line("pcl script output starts here:");
+
+	# Description: Program reads and presents a set of .wav files and markers.
+	# 2015 modified by Anne van Leeuwen 23-02-2015
+	
+	# ################################################################
+	# Read in stimulus-related information
+	# ################################################################
+	
+sub
+   display( string message , int wait)
+begin
+   display_window.erase();
+   display_window.draw_text( message );
+	wait_interval(wait);
+end;
+
+	# the one we use for determination of number of stimuli inside.
+	input_file file_detect_len = new input_file;
+
+	#the one we use for reading the actual experiment stimuli
+	input_file in = new input_file;
+	int ThatManyTrials=0;
+	int i_stmfile = 0;  
+
+	string voorbeeldfile= stimulus_directory + "lijst1.txt";
+	
+	term.print_line(stimulus_directory);
+#	file_detect_len.set_filename( voorbeeldfile );
+	if (file_exists(voorbeeldfile)) then
+		term.print_line("file " + voorbeeldfile + " exists, opening it");
+		file_detect_len.open(voorbeeldfile);
+	end;
+
+	in.set_delimiter( '\t' );
+	in.open(voorbeeldfile);
+
+	# newline is the default delimeter character, but set it anay way, just to be sure.
+	file_detect_len.set_delimiter( '\n' );
+
+	loop
+		i_stmfile = 0;  
+		ThatManyTrials=0;
+		# Counter for number of trial lines (or wav files) available in the stimulus file
+	until
+		file_detect_len.end_of_file()
+	begin
+		i_stmfile = i_stmfile + 1;   
+		term.print_line("scanning line "+ string(i_stmfile)+":");
+		term.print_line(file_detect_len.get_line())
+	end;
+
+
+
+	if (file_detect_len.end_of_file()) then
+		term.print_line("detected end of file")
+	else
+		term.print_line("not yet end of file")
+	end;	
+
+	if (!file_detect_len.last_succeeded()) then
+		term.print_line("file reading failed, some error")
+	else
+		term.print_line("file reading still okay")
+	end;	
+
+	ThatManyTrials = i_stmfile;
+
+	term.print_line("have just detected " + string(ThatManyTrials) + " trials/wavfiles in the examplefile:");
+
+	file_detect_len.close();
+
+	# Set up a vector of .wav file names using the length
+	#array <int> gap[ThatManyTrials];	
+	array <string> wavname[ThatManyTrials];
+	array <int> dialoguenr[ThatManyTrials];
+	array <int> bloknr[ThatManyTrials];
+	array <int> expcode[ThatManyTrials];
+
+int playretcode;
+
+	# Now read in the actual filenames and all timing info from the file
+	loop
+		i_stmfile = 0;  # Counter for (text) stimulus file
+	until
+		in.end_of_file() || i_stmfile == ThatManyTrials || !in.last_succeeded()
+	begin
+		i_stmfile = i_stmfile + 1;	
+		#gap [i_stmfile] = in.get_int();	
+		wavname[i_stmfile] = in.get_string();		
+		dialoguenr [i_stmfile] = in.get_int();
+		bloknr [i_stmfile] = in.get_int();
+		expcode[i_stmfile] = in.get_int();	
+	end;
+
+	if (in.end_of_file()) then
+		term.print_line("have reached end of the file, closing file")
+	else if (i_stmfile == ThatManyTrials) then
+		term.print_line("have processed settings from "+ string(ThatManyTrials)+ " trials/wav files, closing file")
+	else
+		term.print_line("some error, closing file")
+	end;
+
+	# Close the file
+	in.close();
+
+
+	# ################################################################
+	# Main trial definition
+	# ################################################################
+
+	# First present starting screen
+	# list which trails you want to do
+	#startexp1.present();
+	#startexp2.present();
+	#startexp3.present();
+	#startexp4.present();
+	startexp.present();
+	startoefenblok.present();
+	payattention.present();
+
+
+
+	int j = 1;
+	pauzes.shuffle();	
+	
+	int k = 1;
+	array<int> which_stim[inactive_start.count()];						#Create an integer array to refer to the stimulus arrays
+	which_stim.fill( 1, 0, 1, 1 );											#Fill the array with numbers from 1 to inactive_start.count()
+	which_stim.shuffle(); 														#Shuffle the int array
+
+
+# Present the main sequence for this series
+	
+	string f;
+	
+	loop
+		int i_trial = 1
+	until
+		i_trial > ThatManyTrials
+	begin
+		term.print_line("handling trial nr: "+ string(i_trial));
+		# Set the filename and load it
+		f = wavname[i_trial] + ".wav";
+		term.print_line("setting next filename = "+ f);
+
+		s.set_filename( f );  
+		if (file_exists(stimulus_directory + f)) then
+			term.print_line("will try loading file: "+ stimulus_directory + f);
+			s.load();
+			term.print_line("have loaded file: "+ f);
+		 
+			
+			# Set the .wav as the current stm and write wav-name to eventcode (contrains condition, speaker A+B, itemA+B, ioi)
+			# for the portcodes: writes itemnr to portcode at onset wav-file
+			wavevent.set_stimulus( snd ); 
+			wavevent.set_event_code(wavname[i_trial]);
+		
+# main trial definition, playing 3 sounds with different pictures
+# first set all the right pictures, then play
+			if (dialoguenr[i_trial]==0) then
+				event_inactive_start.set_stimulus( inactive_start[which_stim[k]]);				# set the inactive picture - start	
+				event_inactive_start.set_event_code(inactive_start[which_stim[k]].description());
+				
+				event_active.set_stimulus(active_first[which_stim[k]]);								# set picture first active dialogue - self-paced
+				event_active.set_event_code(active_first[which_stim[k]].description());
+				
+				event0.set_stimulus(active_first[which_stim[k]]);										# set picture active first for during listening	
+				event0.set_event_code(string(bloknr[i_trial]));											# set bloknr as code
+				
+				event_nothing.set_event_code(string(dialoguenr[i_trial]));							# set expcode as code = end dialogue
+				
+				event_active_stay.set_stimulus(active_first[which_stim[k]]);						# set picture active first for after listening
+				#event_active_stay.set_event_code(string(gap[i_trial]));							# set gap duration as code
+				
+				event_inactive.set_stimulus(inactive_first[which_stim[k]]);							# set picture inactive first
+				event_inactive.set_event_code(inactive_first[which_stim[k]].description());
+
+				trial_inactive_start.present();												# start with picture inactive	
+				trial_active.present();	
+				playsent.present();	
+				trial_active_stay.present();												# play dialogue
+				trial_inactive.present();														
+				
+			elseif (dialoguenr[i_trial]==1) then
+				event_active.set_stimulus(active_second[which_stim[k]]);								# set picture second active dialogue - self-paced
+				event_active.set_event_code(active_second[which_stim[k]].description());
+				
+				event0.set_stimulus(active_second[which_stim[k]]);										# set picture sound
+				event0.set_event_code(string(bloknr[i_trial]));
+				
+				event_nothing.set_event_code(string(dialoguenr [i_trial]));							# set expcode as code = end dialogue
+				
+				event_active_stay.set_stimulus(active_second[which_stim[k]]);
+				#event_active_stay.set_event_code(string(gap[i_trial]));	
+				
+				event_inactive.set_stimulus( inactive_second[which_stim[k]]);						# set the inactive picture - start
+				event_inactive.set_event_code(inactive_second[which_stim[k]].description());
+
+				trial_active.present();
+				playsent.present();
+				trial_active_stay.present();	
+				trial_inactive.present();
+				
+			else
+				event_active.set_stimulus(active_third[which_stim[k]]);								# set picture third active dialogue - self-paced
+				event_active.set_event_code(active_third[which_stim[k]].description());
+				
+				event0.set_stimulus(active_third[which_stim[k]]);										# set picture sound
+				event0.set_event_code(string(bloknr[i_trial]));
+				
+				event_nothing.set_event_code(string(dialoguenr[i_trial]));							# set expcode as code = end dialogue
+				
+				event_active_stay.set_stimulus(active_third[which_stim[k]]);
+				#event_active_stay.set_event_code(string(gap[i_trial]));
+				
+				event_inactive.set_stimulus(inactive_end[which_stim[k]]);							# set the inactive picture - end
+				event_inactive.set_event_code(inactive_end[which_stim[k]].description());
+				
+				trial_active.present();
+				playsent.present();
+				trial_active_stay.present();
+				trial_inactive.present();
+
+#after the last dialogue display the question
+				trial_blank.present();															
+				trial_vraag3.present();
+				
+				# provide some feedback:
+				ellipse_graphic selected_circle = circle1;
+				if(response_manager.last_response()==3) then
+					selected_circle = circle2;
+				elseif(response_manager.last_response()==4) then
+					selected_circle = circle3;
+				elseif(response_manager.last_response()==5) then
+					selected_circle = circle4;
+				elseif(response_manager.last_response()==6) then
+					selected_circle = circle5;
+				elseif(response_manager.last_response()==7) then
+					selected_circle = circle6;
+				elseif(response_manager.last_response()==8) then
+					selected_circle = circle7;
+				end;
+				
+				selected_circle.set_color(0,255,0,255);
+				selected_circle.set_size(50.0, 50.0);
+				selected_circle.redraw();
+				
+				trial_feedback_vraag3.present();
+				
+				# REDRAW!
+				selected_circle.set_color(166,166,166,255);
+				selected_circle.redraw();
+
+				
+				if (k < which_stim.count()) then
+					k = k+1;
+				else
+					which_stim.shuffle();
+					k=1;	
+				end;	
+			end;
+
+			# End of practice	
+			if (expcode[i_trial]== 1) then
+				term.print_line("expcode ==1...");
+				endpractice.present();
+				starttest.present();
+				payattention.present();
+			end;
+	
+			if (expcode[i_trial]== 3) then
+				term.print_line("expcode ==3");
+				event_pauze.set_stimulus( pauzes[j]);				# set the stimulus of the trial		
+				trial_pauze.present();
+				trial_pauze2.present();
+				payattention.present();
+				if (j < pauzes.count()) then
+					j = j+1;
+				else
+					j=1;	
+					term.print_line("Have shown all available pause-pictures, starting at 1 again..");
+				end;	
+
+			end;	
+		
+			if (expcode[i_trial]==99) then
+				# End of experiment
+				term.print_line("expcode ==99...make sure this code is last in the list!");
+				endexp.present();
+			end;
+			
+			s.unload();
+			i_trial = i_trial + 1;				
+		
+		else
+			term.print_line("WARNING!:    the file " + f +" does not seem to exist!?");
+			
+			i_trial = i_trial + 1; 
+		end;
+	end;
+end;

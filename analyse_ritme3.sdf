@@ -1,0 +1,56 @@
+# Anne van Leeuwen 31-10-2012
+# make 4 lists that log the reaction time between an event and the button press
+
+picture: event_type == "Picture"
+sound:   event_type == "Sound"
+nothing: event_type == "Nothing"
+response: event_type == "Response"
+
+responseyes (response): code!="1"
+responseno (response): code =="1"
+vraag (picture): code=="vraag"
+stimulus: sound
+
+gap: picture and ([rel_trial == trial-1] !=picture)
+response_count = count( response )
+stimulus_count = count( stimulus )
+
+# ik weet niet hoe ik de gap hieruit kan programmeren? misschien op een andere manier koppelen?
+
+pulses:       event_type == "Pulse"
+port_input:   event_type == "Port Input"
+text_input:   event_type == "Text Input"
+save_logfile: event_type == "Save Logfile"
+control:      event_type == "Pause" or event_type == "Resume" or event_type == "Quit"
+
+unc_over_1 : time_uncertainty > 1
+over1_count = count( unc_over_1 )
+unc_over_5 : time_uncertainty > 5
+over5_count = count( unc_over_5 )
+
+
+pair_sound_gap:: simple_match (0,10000, stimulus, gap)
+pair_sound_response:: simple_match(0, 10000, stimulus, response)
+pair_vraag_response:: simple_match(0,10000, vraag, response)
+pair_sound_nothing::simple_match(0,1000, sound, nothing)
+
+# sound dialoguenr pairing
+event_pair_table sound_nothing(subject1, event_type1, event_type2, code1, code2, trial1, trial2, time1, time2 )
+print sound_nothing(pair_sound_nothing, "\t", "\n")
+
+#sound picture (dialoogbalk) pairing - was in ritme 2 gap (nu niet meer)
+event_pair_table sound_gap(subject1, event_type1, event_type2, code1, code2, trial1, trial2, time1, time2 )
+print sound_gap(pair_sound_gap, "\t", "\n")
+
+#sound response pairing
+event_pair_table sound_response(subject1, event_type1, event_type2, code1, code2, trial1, trial2, time1, time2 )
+print sound_response(pair_sound_response, "\t", "\n")
+
+#vraag response pairing
+event_pair_table vraag_response(subject1, event_type1, event_type2, code1, code2, trial1, trial2, time1, time2 )
+print vraag_response(pair_vraag_response, "\t", "\n")
+
+
+
+
+

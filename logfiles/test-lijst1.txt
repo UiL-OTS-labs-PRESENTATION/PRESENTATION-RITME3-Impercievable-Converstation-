@@ -1,0 +1,10 @@
+subject1	event_type1	event_type2	code1	code2	trial1	trial2	time1	time2
+TEST	Sound	Nothing	SS_1_2c_Mi_Ar	1	5	5	1949.9	1950.1
+
+subject1	event_type1	event_type2	code1	code2	trial1	trial2	time1	time2
+TEST	Sound	Picture	SS_1_2c_Mi_Ar	0	5	5	1949.9	1949.9
+
+subject1	event_type1	event_type2	code1	code2	trial1	trial2	time1	time2
+
+subject1	event_type1	event_type2	code1	code2	trial1	trial2	time1	time2
+
